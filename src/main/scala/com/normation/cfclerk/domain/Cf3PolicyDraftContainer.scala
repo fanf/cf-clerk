@@ -54,11 +54,11 @@ class Cf3PolicyDraftContainer(val outPath: String) extends Loggable {
    * @return Full(the added policy) in case of success, Fail in case of error.
    */
   def add(cf3PolicyDraft: Cf3PolicyDraft) : Box[Cf3PolicyDraft] = {
-    cf3PolicyDrafts.get(draftId) match {
+    cf3PolicyDrafts.get(cf3PolicyDraft.id) match {
       case None =>
         logger.trace("Adding cf3PolicyDraft " + cf3PolicyDraft.toString)
         this.updateAllUniqueVariables(cf3PolicyDraft)
-        cf3PolicyDrafts += (draftId -> cf3PolicyDraft)
+        cf3PolicyDrafts += (cf3PolicyDraft.id -> cf3PolicyDraft)
         Full(cf3PolicyDraft)
       case Some(x) => Failure("An instance of the cf3PolicyDraft with the same identifier already exists")
     }
@@ -70,8 +70,8 @@ class Cf3PolicyDraftContainer(val outPath: String) extends Loggable {
    * @return Full(the updated cf3PolicyDraft) in case of success, the error else.
    */
   def update(cf3PolicyDraft: Cf3PolicyDraft) : Box[Cf3PolicyDraft] = {
-    cf3PolicyDrafts.get(draftId) match {
-      case None => Failure("No instance of the cf3PolicyDraft with the given identifier '%s' exists".format(draftId))
+    cf3PolicyDrafts.get(cf3PolicyDraft.id) match {
+      case None => Failure("No instance of the cf3PolicyDraft with the given identifier '%s' exists".format(cf3PolicyDraft.id))
       case Some(x) =>
         x.updateCf3PolicyDraft(cf3PolicyDraft)
         this.updateAllUniqueVariables(cf3PolicyDraft)

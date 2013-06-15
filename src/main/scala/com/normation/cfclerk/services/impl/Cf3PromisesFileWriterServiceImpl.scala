@@ -359,7 +359,7 @@ class Cf3PromisesFileWriterServiceImpl(
        * the serial
        */
       def createValue(cf3PolicyDraft: Cf3PolicyDraft): String = {
-        draftId.value + "@@" + cf3PolicyDraft.serial
+        cf3PolicyDraft.id.value + "@@" + cf3PolicyDraft.serial
       }
 
 
