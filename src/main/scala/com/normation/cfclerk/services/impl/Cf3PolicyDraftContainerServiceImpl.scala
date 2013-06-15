@@ -89,9 +89,9 @@ class Cf3PolicyDraftContainerServiceImpl(
   private def addPolicy(container: Cf3PolicyDraftContainer, cf3PolicyDraft : Cf3PolicyDraft) : Box[Cf3PolicyDraft] = {
 
     // check the legit character of the policy
-    if (container.get(cf3PolicyDraft.id) != None) {
-      logger.warn("Cannot add a CF3 Policy Draft with the same id than an already existing one " + cf3PolicyDraft.id)
-      return ParamFailure[Cf3PolicyDraft]("Duplicate CF3 Policy Draft", Full(new TechniqueException("Duplicate CF3 Policy Draft " +cf3PolicyDraft.id)), Empty, cf3PolicyDraft)
+    if (container.get(draftId) != None) {
+      logger.warn("Cannot add a CF3 Policy Draft with the same id than an already existing one " + draftId)
+      return ParamFailure[Cf3PolicyDraft]("Duplicate CF3 Policy Draft", Full(new TechniqueException("Duplicate CF3 Policy Draft " +draftId)), Empty, cf3PolicyDraft)
     }
 
     val policy = techniqueRepository.get(cf3PolicyDraft.techniqueId).getOrElse(return Failure("Error, can not find CF3 Policy Draft with name '%s' with CF3 Policy Draft service".format(cf3PolicyDraft.techniqueId)))
@@ -106,7 +106,7 @@ class Cf3PolicyDraftContainerServiceImpl(
         logger.info("Successfully added CF3 Policy Draft %s to container %s".format(cf3PolicyDraft, container.outPath))
         Full(cf3pd)
       } else {
-        logger.error("An error occured while adding policy %s for container %s : it is not present".format( cf3PolicyDraft.id, container.outPath))
+        logger.error("An error occured while adding policy %s for container %s : it is not present".format( draftId, container.outPath))
         Failure("Something bad happened, the CF3 Policy Draft '%s' should have been added in container with out path '%s'".format(cf3pd.id, container.outPath))
         }
     }

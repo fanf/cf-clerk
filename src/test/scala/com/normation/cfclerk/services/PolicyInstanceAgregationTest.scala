@@ -40,7 +40,6 @@ import org.junit._
 import org.junit.Assert._
 import org.junit.runner.RunWith
 import org.junit.runners.BlockJUnit4ClassRunner
-import scala.collection._
 import com.normation.cfclerk.domain._
 import com.normation.cfclerk.services.impl.Cf3PromisesFileWriterServiceImpl
 import com.normation.cfclerk.services.impl.SystemVariableSpecServiceImpl
@@ -64,7 +63,7 @@ class DirectiveAgregationTest {
 
   import scala.collection.immutable.Set
   val trackerVariableSpec = TrackerVariableSpec(Some("card"))
-  val trackerVariable = TrackerVariable(trackerVariableSpec)
+  val trackerVariable = TrackerVariable(trackerVariableSpec, Seq())
 
   val activeTechniqueId1 = TechniqueId(TechniqueName("name"), TechniqueVersion("1.0"))
   val activeTechniqueId2 = TechniqueId(TechniqueName("other"), TechniqueVersion("1.0"))
@@ -92,48 +91,32 @@ class DirectiveAgregationTest {
     val instance = new Cf3PolicyDraft("id" + i, activeTechniqueId,
         Map(), trackerVariable, priority = 0, serial = 0)
 
-    val variable = new InputVariable(InputVariableSpec("card", "varDescription1"), Seq())
-    variable.saveValue("value" + i)
-
-    instance.addVariable(variable)
-    instance
+    val variable = new InputVariable(InputVariableSpec("card", "varDescription1"), Seq("value" + i))
+    instance.copyWithAddedVariable(variable)
   }
 
   def createDirectiveWithArrayBinding(activeTechniqueId:TechniqueId, i: Int): Cf3PolicyDraft = {
     val instance = new Cf3PolicyDraft("id" + i, activeTechniqueId, Map(), trackerVariable, priority = 0, serial = 0)
 
-    val variable = new InputVariable(InputVariableSpec("card", "varDescription1", multivalued = true))
-    val value = mutable.ArrayBuffer[String]()
-    var j = 0;
-    while (j < i) {
-      value += ("value" + i)
-      j = j + 1
-    }
-    variable.values = value
+    val variable = InputVariable(
+          InputVariableSpec("card", "varDescription1", multivalued = true)
+        , values = (0 until i).map(_ => "value" + i).toSeq
+    )
 
-    instance.addVariable(variable)
-
-    instance
+    instance.copyWithAddedVariable(variable)
   }
 
   def createDirectiveWithArrayBindingAndNullValues(activeTechniqueId:TechniqueId, i: Int): Cf3PolicyDraft = {
     val instance = new Cf3PolicyDraft("id" + i, activeTechniqueId, Map(), trackerVariable, priority = 0, serial = 0)
 
-    val variable = new InputVariable(InputVariableSpec("card", "varDescription1", multivalued = true))
-    val value = mutable.ArrayBuffer[String]()
-    var j = 0;
-    while (j < i) {
-      if (j > 0)
-        value += ("value" + i)
-      else
-        value += null
-      j = j + 1
-    }
-    variable.values = value
+    val values = (0 until i).map(j =>
+      if (j > 0) "value" + i
+      else null
+    )
 
-    instance.addVariable(variable)
+    val variable = InputVariable(InputVariableSpec("card", "varDescription1", multivalued = true), values)
 
-    instance
+    instance.copyWithAddedVariable(variable)
   }
 
   // Create a Directive, with value , and add it to a server, and aggregate values
