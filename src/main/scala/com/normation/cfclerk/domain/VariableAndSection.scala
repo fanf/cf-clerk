@@ -66,7 +66,7 @@ sealed trait Variable extends Loggable {
 
   def values: Seq[String]  // this is the internal representation of the data
 
-  override def toString() = "%s %s : %s".format(spec.name, spec.description, values)
+  override def toString() = Variable.format(spec.name, values)
 
   /**
    * *********************************
@@ -241,6 +241,21 @@ case class SelectOneVariable(
 
 
 object Variable {
+
+  def format(name: String, values:Seq[String]) = {
+    //we only want to see the values if:
+    //- they start with a ${}, because it's a replacement
+    //- else, only 'limit' chars at most, with "..." if longer
+    val limit = 20
+    val vs = values.map( v =>
+      if(v.startsWith("${")) v
+      else if(v.size < limit) v
+      else v.take(limit) + "..."
+    ).mkString("[", ", ", "]")
+    s"${name}: ${vs}"
+  }
+
+
   // define our own alternatives of matchCopy because we want v.values to be the default
   // values
   def matchCopy(v: Variable): Variable = matchCopy(v, false)

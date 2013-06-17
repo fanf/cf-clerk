@@ -160,7 +160,7 @@ final case class Cf3PolicyDraft(
      */
     policies.map { policy =>
       policy.copyWithSetVariables(this.getUniqueVariables.collect {
-        case(vid, v) if(this.variableMap.keySet.contains(vid)) => v
+        case(vid, v) if(policy.variableMap.keySet.contains(vid)) => v
       }.toSeq )
     }
   }
@@ -218,15 +218,14 @@ final case class Cf3PolicyDraft(
    *
    * @param that
    */
-  def equalsWithSameValues(that: Cf3PolicyDraft): Boolean = {
-    this.id == that.id &&
-      this.techniqueId == that.techniqueId &&
-      this.serial == that.serial &&
-      this.variableMap.filter(x => x._2.values.size > 0).keySet == that.variableMap.filter(x => x._2.values.size > 0).keySet &&
-      variableMap.filter(x => x._2.values.size > 0).keySet.forall { k =>
-        this.variableMap.filter(x => x._2.values.size > 0)(k).values.map(_.trim) == that.variableMap(k).values.map(_.trim)
-      }
-  }
-
+  def equalsWithSameValues(that: Cf3PolicyDraft): Boolean = (
+         this.id == that.id
+      && this.techniqueId == that.techniqueId
+      && this.serial == that.serial
+      && this.variableMap.filter(x => x._2.values.size > 0).keySet == that.variableMap.filter(x => x._2.values.size > 0).keySet
+      && variableMap.filter(x => x._2.values.size > 0).keySet.forall { k =>
+           this.variableMap.filter(x => x._2.values.size > 0)(k).values.map(_.trim) == that.variableMap(k).values.map(_.trim)
+         }
+  )
 }
 
