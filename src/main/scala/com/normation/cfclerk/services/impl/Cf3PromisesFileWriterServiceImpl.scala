@@ -317,7 +317,7 @@ class Cf3PromisesFileWriterServiceImpl(
     val inputs = scala.collection.mutable.Buffer[String]() // all the include file
 
     // Fetch the policies configured, with the system policies first
-    val policies =  techniqueRepository.getByIds(container.getAllIds).sortWith((x,y) => x.isSystem)
+    val policies =  sortTechniques(techniqueRepository.getByIds(container.getAllIds), container)
 
     for {
       tml <- policies.flatMap(p => p.templates)
@@ -345,7 +345,9 @@ class Cf3PromisesFileWriterServiceImpl(
 
     // We need to remove zero-length bundles from the bundlesequence (like, if there is no ncf bundles to call)
     // to avoid having two successives commas in the bundlesequence
-    val bundleSeq = Seq[String](nonNcfBundleSeq, ncfBundleSeq).filter(_.length>0)
+    val bundleSeqString = Seq[String](nonNcfBundleSeq, ncfBundleSeq).filter(_.length>0).mkString(", ")
+
+
 
     Map[String, Variable](
         // Add the built in values for the files to be included and the bundle to be executed
@@ -354,12 +356,49 @@ class Cf3PromisesFileWriterServiceImpl(
           (variable.spec.name, variable)
         }
       , {
-          val variable = SystemVariable(systemVariableSpecService.get("BUNDLELIST"), Seq(bundleSeq.mkString(", ")))
+          val variable = SystemVariable(systemVariableSpecService.get("BUNDLELIST"), Seq(bundleSeqString))
 
           (variable.spec.name, variable)
         }
     )
   }
+
+  /**
+   * Sort the techniques according to the order of the associated BundleOrder of Cf3PolicyDraft.
+   * Sort at best (ie, if a technique has two different sort order, take one at random. Say random == the lower)
+   * Sort system directive first.
+   */
+  private[this] def sortTechniques(techniques: Seq[Technique], container: Cf3PolicyDraftContainer): Seq[Technique] = {
+
+    def sortByOrder(tech: Seq[Technique], container: Cf3PolicyDraftContainer): Seq[Technique] = {
+      def compareBundleOrder(a: List[BundleOrder], b: List[BundleOrder]): Boolean = {
+        BundleOrder.compareList(a, b) <= 0
+      }
+      val drafts = container.getAll().values.toSeq
+
+      //for each technique, get it's best order from draft and return a pair (technique, List(order))
+      val pairs = tech.map { t =>
+        val tDrafts = drafts.filter { _.technique.id == t.id }.sortWith( (d1,d2) => compareBundleOrder(d1.order, d2.order))
+
+        //the order is the one of the more prioritary draft or the default one if no draft (but that should not happen by construction)
+        val order = tDrafts.map( _.order ).headOption.getOrElse(List(BundleOrder.default))
+
+        (t, order)
+      }
+
+      //now just sort them out and keep only techniques
+      val ordered = pairs.sortWith { case ((_, o1), (_, o2)) => BundleOrder.compareList(o1, o2) <= 0 }
+      println("Order===========> " + ordered.map{case(t,o) => (t.name,o)})
+      ordered.map( _._1 )
+    }
+
+    //system technique go first whatever their order
+    val (sys, user) = techniques.partition { _.isSystem }
+
+    sys ++ sortByOrder(user, container)
+
+  }
+
 
   /**
    * From the container, convert the parameter into StringTemplate variable, that contains a list of
